@@ -45,10 +45,24 @@ type envi struct {
 	loadedVars map[string]string
 }
 
-func NewEnvi() Envi {
-	return &envi{
+type Opt func(*envi)
+
+func WithDefaultValues(values map[string]string) Opt {
+	return func(e *envi) {
+		e.loadedVars = values
+	}
+}
+
+func NewEnvi(opts ...Opt) Envi {
+	e := &envi{
 		loadedVars: make(map[string]string),
 	}
+
+	for opt := range opts {
+		opts[opt](e)
+	}
+
+	return e
 }
 
 func (envi *envi) FromMap(vars map[string]string) {
