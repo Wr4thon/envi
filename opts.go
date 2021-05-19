@@ -10,10 +10,10 @@ func WithDefaultValues(values map[string]string) Opt {
 	}
 }
 
-func WithDefaultValueEnvVariable(key string, required bool, defaultValue string) Opt {
+func WithDefaultValueEnvVariable(key string, defaultValue string) Opt {
 	cfg := envVariableConfig
 	cfg.Value = defaultValue
-	return WithVariableConfig(key, required, cfg)
+	return WithVariableConfig(key, false, cfg)
 }
 
 func WithEnvVariable(key string) Opt {

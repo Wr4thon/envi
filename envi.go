@@ -11,8 +11,6 @@ var (
 )
 
 type (
-	Values map[string]Value
-
 	Envi interface {
 		// ToEnv writes all key-value pairs to the environment.
 		ToEnv()
