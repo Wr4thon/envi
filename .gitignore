@@ -124,4 +124,4 @@ fabric.properties
 
 # End of https://www.toptal.com/developers/gitignore/api/go,visualstudiocode,intellij
 *.orig
-*.__debug_bin
+__debug_bin
