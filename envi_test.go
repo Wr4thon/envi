@@ -1,11 +1,14 @@
 package envi
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 )
 
 func Test_FromMap(t *testing.T) {
@@ -55,14 +58,20 @@ func Test_LoadJSONFromFile(t *testing.T) {
 		e := NewEnvi()
 		err := e.LoadJSONFiles("testdata/invalid.json")
 
-		assert.Error(t, err)
+		umfe := &UnmarshalFileError{}
+		require.ErrorAs(t, err, &umfe)
+		assert.Equal(t, "testdata/invalid.json", umfe.FilePath())
+
+		jse := &json.SyntaxError{}
+		require.ErrorAs(t, err, &jse)
+		assert.Equal(t, "invalid character 'm' looking for beginning of value", jse.Error())
 	})
 
 	t.Run("a missing file", func(t *testing.T) {
 		e := NewEnvi()
 		err := e.LoadJSONFiles("testdata/idontexist.json")
 
-		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrMissingFile)
 	})
 }
 
@@ -95,14 +104,20 @@ func Test_LoadYAMLFomFile(t *testing.T) {
 		e := NewEnvi()
 		err := e.LoadYAMLFiles("testdata/invalid.yaml")
 
-		assert.Error(t, err)
+		umfe := &UnmarshalFileError{}
+		require.ErrorAs(t, err, &umfe)
+		assert.Equal(t, "testdata/invalid.yaml", umfe.FilePath())
+
+		yte := &yaml.TypeError{}
+		require.ErrorAs(t, err, &yte)
+		assert.Len(t, yte.Errors, 1)
 	})
 
 	t.Run("a missing file", func(t *testing.T) {
 		e := NewEnvi()
 		err := e.LoadYAMLFiles("testdata/idontexist.yaml")
 
-		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrMissingFile)
 	})
 }
 

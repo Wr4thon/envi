@@ -64,72 +64,140 @@ func (envi *envi) LoadEnv(vars ...string) {
 }
 
 func (envi *envi) LoadFile(key, filePath string) error {
-	blob, err := ioutil.ReadFile(filePath)
+	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return errors.Wrapf(err, "failed to read file '%s'", filePath)
+		return errors.Wrap(
+			fileError(
+				filePath,
+				err,
+			),
+			"failed to load file",
+		)
 	}
 
-	envi.loadedVars[key] = string(blob)
+	envi.loadedVars[key] = string(data)
 
 	return nil
 }
 
 func (envi *envi) LoadJSONFiles(paths ...string) error {
-	for i := range paths {
-		blob, err := ioutil.ReadFile(paths[i])
-		if err != nil {
-			return errors.Wrapf(err, "failed to read json file '%s'", paths[i])
-		}
-
-		err = envi.LoadJSON(blob)
-		if err != nil {
-			return errors.Wrapf(err, "failed to load json file '%s'", paths[i])
-		}
-	}
-
-	return nil
+	return errors.Wrap(
+		envi.loadFiles(
+			envi.LoadJSON,
+			paths...,
+		),
+		"error while loading JSON file",
+	)
 }
 
-func (envi *envi) LoadJSON(blobs ...[]byte) error {
-	for i := range blobs {
-		var decoded map[string]string
-
-		err := json.Unmarshal(blobs[i], &decoded)
-		if err != nil {
-			return errors.Wrap(err, "failed to unmarshal json")
-		}
-
-		for key := range decoded {
-			envi.loadedVars[key] = decoded[key]
-		}
-	}
-
-	return nil
+func (envi *envi) LoadJSON(data ...[]byte) error {
+	return errors.Wrap(
+		envi.load(
+			func(data []byte, out interface{}) error {
+				return errors.Wrap(
+					json.Unmarshal(
+						data,
+						&out,
+					),
+					"error while unmarshaling data from json",
+				)
+			},
+			data...,
+		),
+		"error while loading JSON file",
+	)
 }
 
 func (envi *envi) LoadYAMLFiles(paths ...string) error {
+	return errors.Wrap(
+		envi.loadFiles(
+			envi.LoadYAML,
+			paths...,
+		),
+		"error while loading YAML file",
+	)
+}
+
+func (envi *envi) LoadYAML(data ...[]byte) error {
+	return errors.Wrap(
+		envi.load(
+			func(data []byte, out interface{}) error {
+				const errMsg = "error while unmarshaling data from yaml"
+				var err error
+				if err = yaml.Unmarshal(data, out); err == nil {
+					return nil
+				}
+
+				typeErr := &yaml.TypeError{}
+				switch {
+				case errors.As(err, &typeErr):
+					return errors.Wrap(
+						unmarshalError(
+							err,
+						),
+						errMsg,
+					)
+				default:
+					return errors.Wrap(
+						err,
+						"unexpected error while unmarshaling data from yaml",
+					)
+				}
+			},
+			data...,
+		),
+		"error while loading YAML file",
+	)
+}
+
+func (envi *envi) loadFiles(
+	unmarshalFile func(...[]byte) error,
+	paths ...string,
+) error {
+	var errMsg = "error while loading file"
+
 	for i := range paths {
-		blob, err := ioutil.ReadFile(paths[i])
+		path := paths[i]
+
+		fileContent, err := ioutil.ReadFile(path)
 		if err != nil {
-			return errors.Wrapf(err, "failed to read yaml file '%s'", paths[i])
+			return errors.Wrap(
+				fileError(
+					path,
+					err,
+				),
+				errMsg,
+			)
 		}
 
-		err = envi.LoadYAML(blob)
+		err = unmarshalFile(fileContent)
 		if err != nil {
-			return errors.Wrapf(err, "failed to load yaml file '%s'", paths[i])
+			return errors.Wrap(
+				unmarshalFileError(
+					path,
+					err,
+				),
+				errMsg,
+			)
 		}
 	}
 
 	return nil
 }
 
-func (envi *envi) LoadYAML(blobs ...[]byte) error {
+func (envi *envi) load(
+	unmarshal func([]byte, interface{}) error,
+	blobs ...[]byte,
+) error {
 	for i := range blobs {
 		var decoded map[string]string
 
-		err := yaml.Unmarshal(blobs[i], &decoded)
+		err := unmarshal(blobs[i], &decoded)
 		if err != nil {
-			return errors.Wrap(err, "failed to unmarshal yaml")
+			return errors.Wrap(
+				err,
+				"failed to unmarshal",
+			)
 		}
 
 		for key := range decoded {
@@ -150,7 +218,7 @@ func (envi *envi) EnsureVars(requiredVars ...string) error {
 	}
 
 	if len(missingVars) > 0 {
-		return &RequiredEnvVarsMissing{MissingVars: missingVars}
+		return &RequiredEnvVarsMissing{missingVars: missingVars}
 	}
 
 	return nil
