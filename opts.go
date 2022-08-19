@@ -8,9 +8,15 @@ import (
 // Opt is a function contract that is used to configure the Envi struct.
 type Opt func(*Envi)
 
-func providerFunc[T any](s T) func() T {
+func ProviderFunc[T any](s T) func() T {
 	return func() T {
 		return s
+	}
+}
+
+func ProviderFuncP[T any](s *T) func() T {
+	return func() T {
+		return *s
 	}
 }
 
@@ -25,7 +31,7 @@ func WithContinueOnError(continueOnError func(error) bool) Opt {
 // WithJSONFile creates an Opt that reads a file from the drive,
 // unmarshalls it via json.Unmarshal and validates the result if needed.
 func WithJSONFile[T any](
-	filePath string,
+	filePath func() string,
 	key engine.Key,
 	factory engine.Factory[*T],
 	opts ...variables.Opt,
@@ -34,7 +40,7 @@ func WithJSONFile[T any](
 		key,
 		variables.NewJSONFileVariable(
 			key,
-			providerFunc(filePath),
+			filePath,
 			factory,
 			opts...,
 		),
@@ -44,7 +50,7 @@ func WithJSONFile[T any](
 // WithYAMLFile creates an Opt that reads a file from the drive,
 // unmarshalls it via yaml.Unmarshal and validates the result if needed.
 func WithYAMLFile[T any](
-	filePath string,
+	filePath func() string,
 	key engine.Key,
 	factory engine.Factory[*T],
 	opts ...variables.Opt,
@@ -53,15 +59,15 @@ func WithYAMLFile[T any](
 		key,
 		variables.NewYAMLFileVariable(
 			key,
-			providerFunc(filePath),
+			filePath,
 			factory,
 			opts...,
 		),
 	)
 }
 
-// WithVar can be used to register own variable types, sources, ... to specific
-// keys.
+// WithVar can be used to register own variable
+// types, sources, ... to specific keys.
 func WithVar(key engine.Key, v engine.Var) Opt {
 	return func(e *Envi) {
 		if e.variables == nil {

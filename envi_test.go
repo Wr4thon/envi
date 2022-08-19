@@ -32,9 +32,11 @@ func Test_Load(t *testing.T) {
 		fileNotFound engine.Key = "fileNotFound"
 	)
 
+	sFunc := func(s string) func() string { return func() string { return s } }
+
 	var (
-		valid1JSONPath   string = "testdata/" + valid1JSON.Value()
-		fileNotFoundPath string = fileNotFound.Value()
+		valid1JSONPath   = sFunc("testdata/" + valid1JSON.Value())
+		fileNotFoundPath = sFunc(fileNotFound.Value())
 	)
 
 	var (
@@ -69,7 +71,7 @@ func Test_Load(t *testing.T) {
 				require.ErrorAs(t, tc.err, &fileError)
 				require.ErrorIs(t, fileError, enviErrors.ErrMissingFile)
 				require.Equal(t, fileNotFound, fileError.Key())
-				require.Equal(t, fileNotFoundPath, fileError.FilePath())
+				require.Equal(t, fileNotFoundPath(), fileError.FilePath())
 			},
 		},
 		fileNotFound.Value() + "_and_" + valid1JSON.Value() + "_skipOnError": {

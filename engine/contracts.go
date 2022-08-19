@@ -10,6 +10,10 @@ type Validator[T any] func(value T) error
 // to be able to register it.
 type Var interface {
 	Load() error
-	Value() interface{}
 	Key() Key
+}
+
+type ValueVar[T any] interface {
+	Var
+	Value() T
 }

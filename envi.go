@@ -77,7 +77,12 @@ func (e *Envi) Get(key engine.Key, outPtr interface{}) error {
 		)
 	}
 
-	return assignValueToPointer(variable.Value(), outPtr)
+	stuff := variable.(engine.ValueVar[interface{}])
+
+	return assignValueToPointer(
+		stuff.Value(),
+		outPtr,
+	)
 }
 
 // GetConfig can be used to retrieve all loaded keys.
