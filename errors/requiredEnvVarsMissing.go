@@ -18,6 +18,7 @@ func (e *RequiredEnvVarsMissing) printMissingVars() string {
 	return strings.Join(e.missingVars, ", ")
 }
 
+// MissingVars is used to get a list of all missing variables.
 func (e *RequiredEnvVarsMissing) MissingVars() []string {
 	result := make([]string, len(e.missingVars))
 	copy(result, e.missingVars)

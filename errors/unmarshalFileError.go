@@ -9,10 +9,13 @@ type pathVar interface {
 	Path() string
 }
 
+// UnmarshalFileError is used when an error occurs while unmarshaling a file.
 type UnmarshalFileError struct {
 	FileError
 }
 
+// WrapUnmarshalFileError can be used to provide additional information about
+// the error. When the cause is nil, nil will be returned.
 func WrapUnmarshalFileError(
 	cause error,
 	variable pathVar,
@@ -24,6 +27,7 @@ func WrapUnmarshalFileError(
 	return NewUnmarshalFileError(cause, variable)
 }
 
+// NewUnmarshalFileError creates a new UnmarshalFileError.
 func NewUnmarshalFileError(
 	cause error,
 	variable pathVar) UnmarshalFileError {
@@ -39,6 +43,7 @@ func NewUnmarshalFileError(
 	}
 }
 
+// Error implements the error interface.
 func (e UnmarshalFileError) Error() string {
 	return "\n\tfailed to unmarshal file:" + e.FileError.Error()
 }

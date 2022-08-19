@@ -1,2 +1,2 @@
-MAIL: mutt
-SHELL: bash
+EDITOR: vim
+PAGER: less

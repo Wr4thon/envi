@@ -9,11 +9,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Envi provides the functionality to configure, load, update, and validate
+// configuration values.
 type Envi struct {
 	variables       map[engine.Key]engine.Var
 	continueOnError func(error) bool
 }
 
+// NewEnvi returns a new instance of the envi struct.
 func NewEnvi(opts ...Opt) Envi {
 	envi := &Envi{}
 
@@ -24,6 +27,7 @@ func NewEnvi(opts ...Opt) Envi {
 	return *envi
 }
 
+// LoadKey (re-) loads a specific key that needs to have been added beforehand.
 func (e *Envi) LoadKey(k engine.Key) error {
 	var v engine.Var
 	var ok bool
@@ -47,6 +51,7 @@ func (e *Envi) load(k engine.Key, v engine.Var) error {
 	return err
 }
 
+// Load iterates all keys and loads them one by one.
 func (e *Envi) Load() error {
 	for k, v := range e.variables {
 		if err := e.load(k, v); err != nil {
@@ -62,6 +67,7 @@ func (e *Envi) Load() error {
 	return nil
 }
 
+// Get can be used to get the value to a specific key.
 func (e *Envi) Get(key engine.Key, outPtr interface{}) error {
 	variable, ok := e.variables[key]
 	if !ok {
@@ -74,7 +80,10 @@ func (e *Envi) Get(key engine.Key, outPtr interface{}) error {
 	return assignValueToPointer(variable.Value(), outPtr)
 }
 
-func (e *Envi) GetConfig(callback func(k engine.Key, val engine.Var) error) error {
+// GetConfig can be used to retrieve all loaded keys.
+func (e *Envi) GetConfig(
+	callback func(k engine.Key, val engine.Var) error,
+) error {
 	for k, v := range e.variables {
 		if err := callback(k, v); err != nil {
 			return errors.Wrap(err, "error while getting config")

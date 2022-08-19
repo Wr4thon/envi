@@ -1,6 +1,7 @@
 package envi_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/Clarilab/envi/v2"
@@ -27,13 +28,13 @@ func Test_Load(t *testing.T) {
 	)
 
 	var (
-		valid1       engine.Key = "valid1.json"
+		valid1JSON   engine.Key = "valid1.json"
 		fileNotFound engine.Key = "fileNotFound"
 	)
 
 	var (
-		valid1Path       string = "testdata/valid1.json"
-		fileNotFoundPath string = "fileNotFound"
+		valid1JSONPath   string = "testdata/" + valid1JSON.Value()
+		fileNotFoundPath string = fileNotFound.Value()
 	)
 
 	var (
@@ -46,13 +47,13 @@ func Test_Load(t *testing.T) {
 	)
 
 	tt := map[string]*testCase{
-		valid1.Value(): {
+		valid1JSON.Value(): {
 			envi: envi.NewEnvi(
-				envi.WithJSONFile(valid1Path, valid1, valid1Factory),
+				envi.WithJSONFile(valid1JSONPath, valid1JSON, valid1Factory),
 			),
 			assert: func(t *testing.T, tc *testCase) {
 				var res Valid1
-				require.NoError(t, tc.envi.Get(valid1, &res))
+				require.NoError(t, tc.envi.Get(valid1JSON, &res))
 				require.Equal(t, "emacs", res.Editor)
 			},
 		},
@@ -69,6 +70,23 @@ func Test_Load(t *testing.T) {
 				require.ErrorIs(t, fileError, enviErrors.ErrMissingFile)
 				require.Equal(t, fileNotFound, fileError.Key())
 				require.Equal(t, fileNotFoundPath, fileError.FilePath())
+			},
+		},
+		fileNotFound.Value() + "_and_" + valid1JSON.Value() + "_skipOnError": {
+			envi: envi.NewEnvi(
+				envi.WithJSONFile(valid1JSONPath, valid1JSON, valid1Factory),
+				envi.WithJSONFile(fileNotFoundPath, fileNotFound, nopFactory),
+				envi.WithContinueOnError(func(err error) bool {
+					var fileError enviErrors.FileError
+					return errors.As(err, &fileError) &&
+						fileError.Key() == fileNotFound &&
+						errors.Is(err, enviErrors.ErrMissingFile)
+				}),
+			),
+			assert: func(t *testing.T, tc *testCase) {
+				var res Valid1
+				require.NoError(t, tc.envi.Get(valid1JSON, &res))
+				require.Equal(t, "emacs", res.Editor)
 			},
 		},
 	}
