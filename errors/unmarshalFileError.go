@@ -4,9 +4,13 @@ import (
 	"github.com/Clarilab/envi/v2/engine"
 )
 
+type getPath interface {
+	Path() string
+}
+
 type pathVar interface {
 	engine.Var
-	Path() string
+	getPath
 }
 
 // UnmarshalFileError is used when an error occurs while unmarshaling a file.

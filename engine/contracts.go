@@ -11,9 +11,10 @@ type Validator[T any] func(value T) error
 type Var interface {
 	Load() error
 	Key() Key
+	Value() interface{}
 }
 
-type ValueVar[T any] interface {
+type GenVar[T any] interface {
 	Var
-	Value() T
+	GenValue() T
 }

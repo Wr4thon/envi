@@ -77,10 +77,8 @@ func (e *Envi) Get(key engine.Key, outPtr interface{}) error {
 		)
 	}
 
-	stuff := variable.(engine.ValueVar[interface{}])
-
 	return assignValueToPointer(
-		stuff.Value(),
+		variable.Value(),
 		outPtr,
 	)
 }
